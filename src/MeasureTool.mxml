@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wim:WiMInfoWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   xmlns:esri="http://www.esri.com/2008/ags"
+				   xmlns:wim="gov.usgs.wim.controls.*" 
+				   xmlns:localControls="controls.*"
+				   title="Measurement Tools"
+				   creationComplete="componentLoad()">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.esri.ags.Graphic;
+			import com.esri.ags.SpatialReference;
+			
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			
+			private function componentLoad():void
+			{
+				maximizeButton.visible = false;
+				maximizeButton.includeInLayout = false;
+				minimizeButton.right = 24;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<mx:VBox backgroundColor="black" borderColor="white" borderStyle="solid" height="100%" width="100%" color="white" paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10">
+		<localControls:MeasureMap id="measureTool" top="115" left="155" outSR="{new SpatialReference(102039)}" targetGraphicsLayer="{FlexGlobals.topLevelApplication.measureLayer}" geomService="{FlexGlobals.topLevelApplication.geomService}" />
+	</mx:VBox>
+	
+</wim:WiMInfoWindow>

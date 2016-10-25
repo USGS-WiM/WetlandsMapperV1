@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 03.12.12 - NE - Added output spatial reference property getter/setter. -->
+<!-- 07.28.11 - NE - Added handling for measure tool closing and deactivating the draw tool. -->
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:esri="http://www.esri.com/2008/ags"
+		 creationComplete="onComplete()">
+	<s:layout>
+		<s:VerticalLayout/>
+	</s:layout>
+	
+	<fx:Declarations>
+		
+		<esri:DrawTool id="measureTool"
+					   drawStart="measureStart(event)"
+					   drawEnd="measureEnd(event)" 
+					   graphicsLayer="{targetGraphicsLayer}"
+					   map="{FlexGlobals.topLevelApplication.map}">
+			<esri:fillSymbol>
+				<esri:SimpleFillSymbol color="0x000000"
+									   style="solid">
+					<esri:SimpleLineSymbol width="1" color="red"/>
+				</esri:SimpleFillSymbol>
+			</esri:fillSymbol>
+			<esri:lineSymbol>
+				<esri:SimpleLineSymbol color="red" width="1"/>
+			</esri:lineSymbol>
+		</esri:DrawTool>
+		
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.esri.ags.FeatureSet;
+			import com.esri.ags.Graphic;
+			import com.esri.ags.SpatialReference;
+			import com.esri.ags.events.DrawEvent;
+			import com.esri.ags.events.GeometryServiceEvent;
+			import com.esri.ags.geometry.Geometry;
+			import com.esri.ags.geometry.Polyline;
+			import com.esri.ags.layers.GraphicsLayer;
+			import com.esri.ags.tasks.GeometryService;
+			import com.esri.ags.tasks.QueryTask;
+			import com.esri.ags.tasks.supportClasses.AreasAndLengthsParameters;
+			import com.esri.ags.tasks.supportClasses.AreasAndLengthsResult;
+			import com.esri.ags.tasks.supportClasses.LengthsParameters;
+			import com.esri.ags.tasks.supportClasses.ProjectParameters;
+			import com.esri.ags.tasks.supportClasses.Query;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.ItemClickEvent;
+			import mx.rpc.AsyncResponder;
+			import mx.rpc.Fault;
+			import mx.rpc.events.FaultEvent;
+			
+			private var _geomService:GeometryService;
+			private var _outSR:SpatialReference;
+			private var _targetGraphicsLayer:GraphicsLayer;
+			
+			[Bindable]
+			private var lenLabel:String = "Distance";
+			[Bindable]
+			private var lineDistance:String = '...';
+			[Bindable]
+			private var areaLabel:String = "Area";
+			[Bindable]
+			private var polyArea:String = '...';
+			
+			[Bindable]
+			public function get geomService():GeometryService {
+				return _geomService;
+			}
+			
+			public function set geomService(gs:GeometryService):void {
+				_geomService = gs;
+			}
+			
+			[Bindable]
+			public function get outSR():SpatialReference {
+				return _outSR;
+			}
+			
+			public function set outSR(outsr:SpatialReference):void {
+				_outSR = outsr;
+			}
+			
+			[Bindable]
+			public function get targetGraphicsLayer():GraphicsLayer {
+				return _targetGraphicsLayer;
+			}
+			
+			public function set targetGraphicsLayer(tgl:GraphicsLayer):void {
+				_targetGraphicsLayer = tgl;
+			}
+			
+			private function onComplete():void
+			{
+				FlexGlobals.topLevelApplication.measureToolClose = measureClose;
+			}
+			
+			protected function measureType(event:ItemClickEvent):void
+			{
+				if (measureToggle.selectedIndex == 2)
+				{
+					// when toggling a tool off, deactivate it
+					measureTool.deactivate();
+					//measureToolActivated = false;
+					measureNote.text = "Tool deactivated. Click Polyline or Polygon to measure distance.";
+					lineDistance = "...";
+					polyArea = "...";
+				}
+				else
+				{
+					switch (event.item.label)
+					{
+						case "POLYLINE":
+						{
+							measureTool.activate(DrawTool.POLYLINE);
+							//spatialRel.dataProvider = spatialRelationshipOptions_linear;
+							break;
+						}
+						case "FREEHAND_POLYLINE":
+						{
+							measureTool.activate(DrawTool.FREEHAND_POLYLINE);
+							//spatialRel.dataProvider = spatialRelationshipOptions_linear;
+							break;
+						}
+						case "POLYGON":
+						{
+							measureTool.activate(DrawTool.POLYGON);
+							//spatialRel.dataProvider = spatialRelationshipOptions_area;
+							break;
+						}
+						case "FREEHAND_POLYGON":
+						{
+							measureTool.activate(DrawTool.FREEHAND_POLYGON);
+							//spatialRel.dataProvider = spatialRelationshipOptions_area;
+							break;
+						}
+						case "EXTENT":
+						{
+							measureTool.activate(DrawTool.EXTENT);
+							//spatialRel.dataProvider = spatialRelationshipOptions_area;
+							break;
+						}
+						case "CIRCLE":
+						{
+							measureTool.activate(DrawTool.CIRCLE);
+							//spatialRel.dataProvider = spatialRelationshipOptions_area;
+							break;
+						}
+						case "ELLIPSE":
+						{
+							measureTool.activate(DrawTool.ELLIPSE);
+							//spatialRel.dataProvider = spatialRelationshipOptions_area;
+							break;
+						}
+					}
+				}
+			}
+			
+			private function measureStart(event:DrawEvent):void {
+				targetGraphicsLayer.clear();
+				lineDistance = "...";
+				polyArea = "...";
+			}
+			
+			protected function measureEnd(event:DrawEvent):void {
+				var projParams:ProjectParameters = new ProjectParameters();
+				projParams.geometries = [event.graphic.geometry];
+				projParams.outSpatialReference = outSR;
+				geomService.project(projParams, new AsyncResponder(projComp, projFault, null));
+			}
+			
+			private function geoServFault(event:FaultEvent):void {
+				var splitOne:Array = event.fault.faultDetail.toString().split("esriGeometry");
+				//deal with occasinol undefined value for splitTwo
+				var splitTwo:Array = splitOne[1].split("%");
+				if (splitTwo[0] == "Polyline") {
+					lineDistance = "Error. Please try again.";
+				} else if (splitTwo[0] == "Polygon") {
+					lineDistance = "Error. Please try again.";
+					polyArea = "Error. Please try again.";
+				}
+			}
+			
+			private function projComp(result:Object, token:Object = null):void {
+				if (measureToggle.selectedIndex == 0) {
+					var line:Geometry = (result as Array)[0];
+					var lenParams:LengthsParameters = new LengthsParameters();
+					lenParams.geodesic = true;
+					lenParams.polylines = [ line ];
+					geomService.lengths(lenParams, new AsyncResponder(lenComp, lenFault, null));
+				} else if (measureToggle.selectedIndex == 1) {
+					var polygon:Geometry = (result as Array)[0];
+					var areaAndLenParams:AreasAndLengthsParameters = new AreasAndLengthsParameters();
+					areaAndLenParams.polygons = [ polygon ];
+					geomService.areasAndLengths(areaAndLenParams, new AsyncResponder(areaAndLenComp, areaAndLenFault, null));
+				}
+			}
+			
+			private function projFault(fault:Fault, token:Object = null):void {
+				Alert.show(fault.faultString + "\n\n" + fault.faultDetail, "Geometry Service Fault " + fault.faultCode);
+			}
+			
+			//function to compute line distance and populate measure tool
+			private function lenComp(result:Array, token:Object = null):void {
+				lineDistance = ((result[0]/1000)*0.621371192).toFixed(2) + " mi";
+				polyArea = "n/a";
+			}
+			
+			private function lenFault(fault:Fault, token:Object = null):void {
+				Alert.show(fault.faultString + "\n\n" + fault.faultDetail, "Geometry Service Fault " + fault.faultCode);
+			}
+			
+			//function to compute polygon perimeter and area and populate measure tool
+			private function areaAndLenComp(result:AreasAndLengthsResult, token:Object = null):void {
+				lineDistance = ((result.lengths[0]/1000)*0.621371192).toFixed(2) + " mi";
+				polyArea = ((result.areas[0]/1000000)*247.105381).toFixed(2) + " acres";
+			}
+			
+			private function areaAndLenFault(fault:Fault, token:Object = null):void {
+				Alert.show(fault.faultString + "\n\n" + fault.faultDetail, "Geometry Service Fault " + fault.faultCode);
+			}
+			
+			public function measureClose():void {
+				measureTool.deactivate();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<mx:Box>
+		<mx:HBox>
+			<mx:Label text="Type: " />
+			<mx:ToggleButtonBar id="measureToggle" selectedIndex="-1" labelField="text" itemClick="measureType(event)">
+				<fx:Object icon="@Embed(source='assets/images/polyline.png')" label="POLYLINE"/>
+				<!--<fx:Object label="FREEHAND_POLYLINE"/>-->
+				<fx:Object icon="@Embed(source='assets/images/polygon.png')" label="POLYGON"/>
+				<!--<fx:Object label="FREEHAND_POLYGON"/>-->
+				<fx:Object text="Deactivate"/>
+				<!--<fx:Object label="CIRCLE"/>
+				<fx:Object label="ELLIPSE"/>-->
+			</mx:ToggleButtonBar>
+		</mx:HBox>
+		<mx:Box horizontalAlign="center" width="100%">
+			<mx:Text id="measureNote" color="#692301" fontWeight="bold" width="200" text="Draw a polyline to measure a distance. Double click to finish." />
+		</mx:Box>
+		<mx:Text text="{lenLabel}: {lineDistance}" /> <!--/1000)*0.621371192).toFixed(2)-->
+		<mx:Text text="{areaLabel}: {polyArea}" />	
+	</mx:Box>
+	
+</s:Group>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 08.05.10 - Remove stlying -->
+<!-- 06.28.10 - Created, skin for Zoom Salector -->
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx">
+	
+	<!-- host component -->
+	<fx:Metadata>
+		[HostComponent("gov.usgs.wim.controls.ZoomSelector")]
+	</fx:Metadata>
+	
+		
+	<!-- script -->
+	<fx:Script>
+		<![CDATA[			
+			import mx.events.FlexEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			private function zoomSelection(event:IndexChangeEvent):void 
+			{				
+				if (event.newIndex > -1) {
+					for each( var anExtent:Object in hostComponent.extents) {
+						if (anExtent.name == hostComponent.extents[event.newIndex].name) {
+							hostComponent.targetMap.extent = anExtent.extent;
+						}
+					}		
+				}
+			}
+			
+
+		]]>
+	</fx:Script>
+	
+	<!-- states -->
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="hovered" />
+		<s:State name="selected" />
+	</s:states>
+	
+	<mx:HBox id="zoomTo" styleName="zoomSelectorContainer">
+		<mx:Label text="{hostComponent.selectorTitle}" fontWeight="bold"  verticalCenter="0" />
+		<s:DropDownList id="zoomSelectorDropDown"
+						prompt="{hostComponent.prompt}"
+						dataProvider="{hostComponent.extents}"	
+						color="white"
+						symbolColor="white"
+						contentBackgroundColor="black"
+						contentBackgroundAlpha="0.8"
+						skinClass="gov.usgs.wim.controls.skins.WimDropDownList"
+						labelField="name"					 	 
+						change="zoomSelection(event);" >
+		</s:DropDownList>
+	</mx:HBox>
+	
+</s:Skin>
