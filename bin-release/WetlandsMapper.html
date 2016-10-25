@@ -35,8 +35,31 @@
         <!-- END Browser History required section -->  
             
         <script type="text/javascript" src="swfobject.js"></script>
+        <script src="https://code.jquery.com/jquery-1.7.1.min.js" type="text/javascript"></script>
         <script type="text/javascript">
-            // For version detection, set to min. required Flash Player version, or 0 (or 0.0.0), for no version detection. 
+        	
+        	$(document).ready(function() {
+        		$.ajax({
+        			type: "GET",
+        			url: "assets/resources/locale/en_US.xml",
+        			dataType: "xml",
+        			success: parseResources
+        		});
+        	});
+        	
+        	function parseResources(xml) {
+        		var referrer = document.referrer;
+        		
+        		$(xml).find("resource").each(function() {
+        			if ($(this).attr("name") == "redirectUrl") {
+        				if ($(this).attr("value") != referrer && $(this).attr("value") != '') {
+        					//window.location = $(this).attr("value");
+        				}
+        			}
+        		});
+        	}
+        	
+        	// For version detection, set to min. required Flash Player version, or 0 (or 0.0.0), for no version detection. 
             var swfVersionStr = "11.1.0";
             // To use express install, set to playerProductInstall.swf, otherwise the empty string. 
             var xiSwfUrlStr = "playerProductInstall.swf";
