@@ -28,7 +28,7 @@
 	 
 	 <resource name="fwsRefugesUrl" value="http://gis.fws.gov/ArcGIS/rest/services/FWS_Refuge_Boundaries/MapServer"/>
 	 
-	 <resource name="swiStatusUrl" value="https://fwsmapservices.wim.usgs.gov/ArcGIS/rest/services/swi/SWI_Status/MapServer"/>
+	 <resource name="swiStatusUrl" value="https://fwsmapservices.wim.usgs.gov/arcgis/rest/services/Wetlands_Status/MapServer"/>
 	 
 	 <resource name="wetlandsDecoderUrl" value="https://fwsmapservices.wim.usgs.gov/decoders/wetlands.aspx?CodeURL=" />
 	 <resource name="riparianDecoderUrl" value="https://fwsmapservices.wim.usgs.gov/decoders/riparian.aspx?CodeURL=" />
