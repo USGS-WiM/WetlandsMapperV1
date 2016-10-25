@@ -1,0 +1,80 @@
+<!-- 05.05.16 - NE - Updated to https urls. -->
+<!-- 10.03.12 - NE - Changed url for wetlandsMetadataUrl. -->
+<!-- 08.01.12 - NE - Updated urls for metadata information on wetlands and riparian. -->
+<!-- 07.31.12 - NE - Added urls for metadata information on wetlands and riparian. -->
+<!-- 04.17.12 - NE - Added urls for data download and application titles to ui.text. -->
+<!-- 04.12.12 - NE - Start as Wetlands Mapper resource file. -->
+<!-- 02.23.12 - NE - Created. -->
+<!--
+*************************
+ ENGLISH RESOURCES
+************************* 
+ -->
+<!-- en_US_prod.xml -->
+<resources>
+  <!-- Settings -->
+  
+  <!--  URLs -->
+  <resourceBundle name="urls">
+  
+  	 <resource name="wetlandsUrl" value="https://fwsmapservices.wim.usgs.gov/ArcGIS/rest/services/NWIV1/Wetlands/MapServer"/>
+	 <resource name="wetlandsRasterUrl" value="https://fwsmapservices.wim.usgs.gov/arcgis/rest/services/NWIV1/WetlandsRaster/ImageServer"/>
+	 <resource name="wetlandsStatusUrl" value="https://fwsmapservices.wim.usgs.gov/ArcGIS/rest/services/NWIV1/Wetlands_Status/MapServer"/>
+	 <resource name="riparianUrl" value="https://fwsmapservices.wim.usgs.gov/ArcGIS/rest/services/Riparian/MapServer"/>
+	 <resource name="dataSourceUrl" value="https://fwsmapservices.wim.usgs.gov/ArcGIS/rest/services/NWIV1/Data_Source/MapServer"/>
+	 <resource name="areasOfInterestUrl" value="https://fwsmapservices.wim.usgs.gov/ArcGIS/rest/services/Areas_of_Interest/MapServer/0"/>
+	 <resource name="historicUrl" value="https://fwsmapservices.wim.usgs.gov/ArcGIS/rest/services/Historic_Wetlands/MapServer"/>
+	 <resource name="huc8Url" value="https://fwsmapservices.wim.usgs.gov/ArcGIS/rest/services/HUCs/MapServer"/>
+	 
+	 <resource name="fwsRefugesUrl" value="http://gis.fws.gov/ArcGIS/rest/services/FWS_Refuge_Boundaries/MapServer"/>
+	 
+	 <resource name="swiStatusUrl" value="https://fwsmapservices.wim.usgs.gov/ArcGIS/rest/services/swi/SWI_Status/MapServer"/>
+	 
+	 <resource name="wetlandsDecoderUrl" value="https://fwsmapservices.wim.usgs.gov/decoders/wetlands.aspx?CodeURL=" />
+	 <resource name="riparianDecoderUrl" value="https://fwsmapservices.wim.usgs.gov/decoders/riparian.aspx?CodeURL=" />
+	 
+	 <resource name="pdfUrl" value="https://fwsmapservices.wim.usgs.gov/wetland/Default.aspx"/>
+	 
+	 <resource name="geomServiceUrl" value="https://fwsmapservices.wim.usgs.gov/arcgis/rest/services/Utilities/Geometry/GeometryServer"/>
+	 
+	 <resource name="geocoderUrl" value="http://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer"/>
+	 
+	 <resource name="proxyUrl" value="https://fwsmapservices.wim.usgs.gov/serviceProxy/proxy.ashx" />
+	 <resource name="downloadLogUrl" value="https://fwsmapservices.wim.usgs.gov/downloadLoggingService/downloadLog.asmx/Log?huc=" />
+	 <resource name="printLogUrl" value="https://fwsmapservices.wim.usgs.gov/pdfLoggingService/pdfLog.asmx/Log?printInfo=" />
+	 
+	<resource name="wetlandsLegendInfoUrl" value="http://www.fws.gov/wetlands/Data/Mapper-Wetlands-Legend.html"/>
+	 
+  	 <resource name="redirectUrl" value="http://www.fws.gov/wetlands/Data/Mapper.html"/>
+	 <resource name="stateDownloadsUrl" value="http://www.fws.gov/wetlands/Data/State-Downloads.html"/>
+	 <resource name="dataDownloadUrl" value="http://www.fws.gov/wetlands/Data/Data-Download.html"/>
+	 <resource name="wetlandsMetadataUrl" value="http://www.fws.gov/wetlands/Data/Wetlands-Product-Summary.html"/>
+	 <resource name="riparianMetadataUrl" value="http://www.fws.gov/wetlands/Other/Riparian-Product-Summary.html"/>
+	 <resource name="historicMetadataUrl" value="http://www.fws.gov/wetlands/Data/Historic-Wetlands-Product-Summary.html"/>
+	 <resource name="refugeMetadataUrl" value="http://www.fws.gov/gis/data/CadastralDB/FwsInterest.html"/>
+	 <resource name="FGDCHistoricMetadataUrl" value="http://www.fws.gov/wetlands/Data/metadata/FWS_Historic_Wetlands.xml"/>
+	 <resource name="POIMetadataUrl" value="http://www.fws.gov/wetlands/Data/metadata/FWS_Wetland_Areas_of_Interest.xml"/>
+	 
+  </resourceBundle>
+  
+  <!-- UI graphics -->
+  <resourceBundle name="ui.graphics">
+  	<resource name="magnifyingGlass" value="./assets/images/zoom.gif"></resource>
+  </resourceBundle>
+  
+  <!-- UI text -->
+  <resourceBundle name="ui.text">
+    <!-- Application Titles --><resource name="mainTitle" value="U.S. Fish and Wildlife Service"></resource>
+  	<resource name="subTitle" value="National Wetlands Inventory"></resource><!--Component Text -->
+    <resource name="geocodeSearchButtonText" value="Find Location"/>
+    <resource name="geocodeSearchHintText" value="Type Address, Landmark, etc..." />
+    <resource name="disclaimerHtml" value="" >
+    	<![CDATA[ <p>The map displays at this site show wetland type and extent using a biological definition of wetlands. There is no attempt to define the limits of proprietary jurisdiction of any Federal, state, or local government, or to establish the geographical scope of the regulatory programs of government agencies.
+    		</p><p>The use of products, or trade, product, industry or firm names is for informative purposes only and does not constitute an endorsement by the U.S. Government or the U.S. Fish and Wildlife Service (FWS).
+    		</p><p>Links to non-Service Web sites do not imply any official FWS endorsement of the opinions or ideas expressed therein, or guarantee the validity of the information provided.
+    		</p><p>Base cartographic information used as part of this Wetlands Mapper has been provided through third party products.  The FWS does not maintain, and is not responsible for the accuracy or completeness of the base cartographic information.</p>
+    		<p>This application may not be fully accessible to people with disabilities.  If you need assistance accessing this mapper or wetlands data email us at: <a href="mailto:wetlands_team@fws.gov">wetlands_team@fws.gov</a></p>
+    		<button type="button" onclick="disclaimerHide()">OK</button> ]]>
+    </resource>
+  </resourceBundle>
+</resources>

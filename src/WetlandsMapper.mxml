@@ -1,0 +1,856 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 05.20.13 - NE - Added feature layer to show tooltip and info for huc when in download mode. -->
+<!-- 03.07.13 - NE - Added link for Area of Interest metadata. -->
+<!-- 02.28.13 - NE - Added legends for refuges and areas of interest. -->
+<!-- 02.27.13 - NE - Combined wetlands and status into one layer toggle. -->
+<!-- 02.27.13 - NE - Made all legends dynamic. -->
+<!-- 02.26.13 - NE - Added 24k and 100k quads to scan popup. -->
+<!-- 02.26.13 - NE - Minor text and UI tweaks. -->
+<!-- 02.04.13 - NE - Replaced Bing geocoder with ESRI geocoder. -->
+<!-- 01.31.13 - NE - Added metadata link to historic wetlands. -->
+<!-- 01.31.13 - NE - Updated most urls to use resource file. Added Historic Quad layer. -->
+<!-- 04.17.12 - NE - Updated urls and added some resource file strings. -->
+<!-- 02.22.12 - NE - Removed historic quad layer for main mapper. -->
+<!-- 02.22.12 - NE - Updates to historic quad layer and toggle names to remove lake thompson. Updated release build. -->
+<!-- 01.20.12 - NE - Updated historic quads and huc service urls to external IP. -->
+<!-- 01.17.12 - NE - Added beta watershed download tool. -->
+<!-- 01.11.12 - NE - Added Lake Thompson data and layer toggle. -->
+<!-- 01.11.12 - NE - Changed behavior in geocoder by tweaking CollapsingSearch component. -->
+<!-- 01.11.12 - NE - Reordered layers to draw refuges above wetlands status and data. -->
+<!-- 01.04.12 - NE - Added Layer toggle for FWS Refuges layer. Added link to metadata. -->
+<!-- 07.27.11 - NE - Minor UI tweaks. -->
+<!-- 07.06.11 - NE - Added 'scan' status handling. -->
+<!-- 07.05.11 - NE - Initial check-in to SVN. -->
+<!-- 06.28.11 - NE - Start as Wetlands Mapper 2.0 -->
+<!-- 04.01.11 - JB - Added AS side logic for right-click and mousewheel -->
+<!-- 03.14.11 - NE - Updated to include many WiM controls.  Base map selector, full screen button, collapsing search for geocoder, history. -->
+<!-- 03.28.11 - JB - Template clean-up and updates -->
+<!-- 12.13.10 - NE - Updated extent navigator location.  changed cursor to standard arrow. -->
+<!-- 12.06.10 - JB - Updated Well-Known ID. -->
+<!-- 07.28.10 - JB - updated geocode tag for 2.0 -->
+<!-- 06.28.10 - JB - Added new Wim LayerLegend component -->
+<!-- 05.25.10 - JB - Cleared FWS references from print template -->
+<!-- 03.26.10 - JB - Initial template creation. -->
+<mx:Application
+	xmlns:mx="library://ns.adobe.com/flex/mx" 
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:esri="http://www.esri.com/2008/ags"
+	xmlns:wimControls="gov.usgs.wim.controls.*"
+	xmlns:localControls="controls.*"
+	xmlns:navigationClasses="com.esri.ags.controls.navigationClasses.*"
+	creationComplete="setup()"
+	pageTitle="FWS Wetlands Mapper"
+	layout="absolute">
+	
+	<fx:Style source="assets/styles/main.css"/>
+	<fx:Style source="assets/styles/infoSymbolBox.css"/>
+	<fx:Script>
+		<![CDATA[
+			import gov.usgs.wim.controls.skins.ZoomSelectorSkin;
+		]]>
+	</fx:Script>
+	<fx:Script source="WetlandsMapper.as" />
+	
+	<fx:Declarations>
+		
+		<esri:GeometryService id="geomService" url="{resourceManager.getString('urls', 'geomServiceUrl')}"/>
+
+		<esri:NavigationTool id="navToolbar" map="{map}"/>
+		
+		<!-- Beging ESRI geocoder. Code taken from website example. -->
+		<esri:Locator id="locator"
+					  outSpatialReference="{map.spatialReference}"
+					  url="{resourceManager.getString('urls', 'geocoderUrl')}"/>
+		
+		<esri:SimpleMarkerSymbol id="mySymbol"
+								 alpha="0.5"
+								 color="0xFF0000"
+								 size="21"
+								 style="circle">
+			<esri:SimpleLineSymbol width="2"/>
+		</esri:SimpleMarkerSymbol>
+		<!-- End ESRI Geocoder -->
+		
+		<!--<esri:VEGeocoder id="veGeocoder" 
+						 key="Aji8Re-EmYI1VdpMOe3roa64pwmu5phdNqclyk7QfJJ6RwZTZJqiCM8Mx13aIC8_" 
+						 culture="en-US"/>-->
+		
+		<esri:SimpleFillSymbol id="aQuerySym" style="null" color="0x000000" alpha="0.25">
+			<esri:outline>
+				<esri:SimpleLineSymbol style="solid" color="0xFFFF00" width="2" />
+			</esri:outline>
+		</esri:SimpleFillSymbol> 
+		
+		<esri:PictureMarkerSymbol id="pinSym" source="assets/images/grn-pushpin.png" />
+		
+		<s:RadioButtonGroup id="dataSourceOpt" />
+		
+		<!-- Geoprocessor object for wetlands data extract in current extent -->
+		<esri:Geoprocessor id="wetlandsDownload" url="{resourceManager.getString('urls', 'dataExtractUrl')}" />
+		
+		<!-- Info Box Symbol for displaying layer query results -->
+		
+		<!-- Zoom to selector extents. -->
+		<mx:ArrayCollection id="areaExtents">
+			<fx:Object>
+				<fx:name>Continental US</fx:name>
+				<fx:extent>
+					<esri:Extent id="conusExt" xmin="-16867511.90574546" ymin="1697513.524160258" xmax="-4422340.708469514" ymax="7636364.873803733">
+						<esri:SpatialReference wkid="102100"/>
+					</esri:Extent>
+				</fx:extent>
+			</fx:Object>
+			<fx:Object>
+				<fx:name>Alaska</fx:name>
+				<fx:extent>
+					<esri:Extent id="akExt" xmin="-25821641.81649072" ymin="5735881.681329062" xmax="-7036477.745130801" ymax="12995564.879740031">
+						<esri:SpatialReference wkid="102100"/>
+					</esri:Extent>
+				</fx:extent>
+			</fx:Object>
+			<fx:Object>
+				<fx:name>Hawaii</fx:name>
+				<fx:extent>
+					<esri:Extent id="hiExt" xmin="-18314422.3778746" ymin="1964608.6721591265" xmax="-16748992.038594615" ymax="2716749.0304850577">
+						<esri:SpatialReference wkid="102100"/>
+					</esri:Extent>
+				</fx:extent>
+			</fx:Object>
+			<fx:Object>
+				<fx:name>Puerto Rico</fx:name>
+				<fx:extent>
+					<esri:Extent id="prExt" xmin="-7726791.520465247" ymin="1874090.483429064" xmax="-6944076.350825081" ymax="2250160.6625921126">
+						<esri:SpatialReference wkid="102100"/>
+					</esri:Extent>
+				</fx:extent>
+			</fx:Object>
+			<fx:Object>
+				<fx:name>Pacific Trust Islands</fx:name>
+				<fx:extent>
+					<esri:Extent id="pacTrustExt" xmin="14673913.5584275" ymin="1196696.4979743045" xmax="17804774.236987486" ymax="2700977.214626174">
+						<esri:SpatialReference wkid="102100"/>
+					</esri:Extent>
+				</fx:extent>
+			</fx:Object>
+		</mx:ArrayCollection>
+		
+		<mx:ArrayCollection id="dataSourceImageTypeVis">                    
+			<fx:Number>1</fx:Number>                
+		</mx:ArrayCollection>
+		
+		<mx:ArrayCollection id="dataSourceImageScaleVis">                    
+			<fx:Number>2</fx:Number>                
+		</mx:ArrayCollection>
+		
+		<mx:ArrayCollection id="dataSourceImageYearVis">                    
+			<fx:Number>3</fx:Number>                
+		</mx:ArrayCollection>
+		
+		<fx:Array id="iconArray">             
+			<fx:Object icon="{streetsIcon}">
+				<fx:toolTip>Streets</fx:toolTip>
+			</fx:Object>  
+			<fx:Object icon="{satelliteIcon}">
+				<fx:toolTip>Imagery/Labels</fx:toolTip>
+			</fx:Object>
+			<fx:Object icon="{mountainIcon}">
+				<fx:toolTip>Topo</fx:toolTip>
+			</fx:Object>
+			<fx:Object icon="{usgsIcon}">
+				<fx:toolTip>USGS Topo</fx:toolTip>
+			</fx:Object>
+		</fx:Array>
+		
+		<fx:Array id="textArray">             
+			<fx:Object label="Streets">
+				<fx:toolTip>Streets</fx:toolTip>
+			</fx:Object>  
+			<fx:Object label="Imagery/Labels">
+				<fx:toolTip>Imagery/Labels</fx:toolTip>
+			</fx:Object>
+			<fx:Object label="Topo">
+				<fx:toolTip>Topo</fx:toolTip>
+			</fx:Object>
+			<fx:Object label="USGS Topo">
+				<fx:toolTip>USGS Topo</fx:toolTip>
+			</fx:Object>
+		</fx:Array>
+		
+		<esri:InfoSymbol id="singleGraphicSym" containerStyleName="queryInfoBox" >
+			<esri:infoRenderer>
+				<fx:Component>
+					<mx:VBox styleName="infoBox" width="100%" >		   				
+						<fx:Style source="assets/styles/infoSymbolBox.css"/>
+						<fx:Script>
+							<![CDATA[
+								import mx.controls.Alert;
+								
+								private function infoClear():void
+								{
+									parent.parent.visible = false;
+								}
+								
+							]]>
+						</fx:Script>
+						<mx:HBox width="100%">
+							<mx:Label text="{data.title}" color="white" fontWeight="bold" fontSize="12" />
+							<mx:HBox width="100%" horizontalGap="0" />
+							<mx:Button id="closeButton" styleName="InfoCloseButton" height="18" width="18" click="infoClear()"/>
+						</mx:HBox>
+						<mx:VBox styleName="poiContain" width="100%" paddingTop="10" paddingBottom="5" paddingLeft="5" paddingRight="5" verticalGap="0">
+							<mx:HBox horizontalGap="0">
+								<mx:Text text="" fontWeight="bold" />
+								<mx:Text text="{data.value}" />
+							</mx:HBox>
+						</mx:VBox>
+					</mx:VBox>
+				</fx:Component>
+			</esri:infoRenderer>
+		</esri:InfoSymbol>
+		
+		<esri:InfoSymbol id="scanSym" containerStyleName="wetInfo">
+			<esri:infoRenderer>
+				<fx:Component>
+					<mx:VBox styleName="poiBox" alpha="0.75" width="100%" >
+						<fx:Style>                        
+							.InfoCloseButton {                        
+							disabledSkin: Embed(source="./assets/skins.swf", symbol="Callout_closeButtonDisabledSkin");                        
+							downSkin: Embed(source="./assets/skins.swf", symbol="Callout_closeButtonDownSkin");                        
+							overSkin: Embed(source="./assets/skins.swf", symbol="Callout_closeButtonOverSkin");                        
+							upSkin: Embed(source="./assets/skins.swf", symbol="Callout_closeButtonUpSkin");
+							position: absolute;
+							top: 2;
+							right: 2;                     
+							}                        
+							.InfoExpandButton {                        
+							disabledSkin: Embed(source="./assets/skins.swf", symbol="Callout_expandButtonDisabledSkin");                        
+							downSkin: Embed(source="./assets/skins.swf", symbol="Callout_expandButtonDownSkin");                        
+							overSkin: Embed(source="./assets/skins.swf", symbol="Callout_expandButtonOverSkin");                        
+							upSkin: Embed(source="./assets/skins.swf", symbol="Callout_expandButtonUpSkin");                        
+							}    
+							.line {
+							text-decoration: underline;
+							color: blue;
+							}
+							.noline {
+							color: black;
+							text-decoration: none;
+							}                  
+						</fx:Style>
+						<fx:Script>
+							<![CDATA[
+							private function infoClear():void
+							{
+							parent.parent.visible = false;
+							}
+							]]>
+						</fx:Script>
+						<mx:HBox width="100%">
+							<mx:Label text="Wetlands" color="white" fontWeight="bold" fontSize="12" />
+							<mx:HBox width="100%" horizontalGap="0" />
+							<mx:Button id="closeButton" styleName="InfoCloseButton" height="18" width="18" click="infoClear()"/>
+						</mx:HBox>
+						<mx:VBox styleName="poiContain" width="100%" paddingTop="10" paddingBottom="5" paddingLeft="5" paddingRight="5" verticalGap="0">
+							<mx:HBox horizontalGap="0"><mx:Text text="Status:" fontWeight="bold" /><mx:Text text="{data.STATUS}" /></mx:HBox>
+							<mx:HBox>
+								<mx:Text text="No attributed polygons available in this area.  Scanned wetland maps are provided as vector graphics for reference and map overlays." width="200" />
+							</mx:HBox>
+							<mx:HBox paddingTop="10">
+								<mx:Text text="Image Date(s):" fontWeight="bold" /><mx:Text text="{data.IMAGE_DATE}" />
+							</mx:HBox>
+							<mx:HBox>
+								<mx:Text text="Image Type:" fontWeight="bold" /><mx:Text text="{data.EMULSION}" />
+							</mx:HBox>
+							<mx:HBox>
+								<mx:Text text="Image Scale:" fontWeight="bold" /><mx:Text text="{data.IMAGE_SCALE}" />
+							</mx:HBox>
+							<s:HGroup visible="{(data.quad24k != null) ? true : false}" includeInLayout="{(data.quad24k != null) ? true : false}"><mx:Text text="24k Quad Name:" fontWeight="bold" /><mx:Text text="{(data.quad24k != null) ? data.quad24k : 'n/a'}" /></s:HGroup>
+							<s:HGroup visible="{(data.quad100k != null) ? true : false}" includeInLayout="{(data.quad100k != null) ? true : false}"><mx:Text text="100k Quad Name:" fontWeight="bold" /><mx:Text text="{(data.quad100k != null) ? data.quad100k : 'n/a'}" /></s:HGroup>
+							<s:HGroup visible="{(data.quad63k != null) ? true : false}" includeInLayout="{(data.quad63k != null) ? true : false}"><mx:Text text="63k Quad Name:" fontWeight="bold" /><mx:Text text="{(data.quad63k != null) ? data.quad63k : 'n/a'}" /></s:HGroup>
+						</mx:VBox>
+					</mx:VBox>
+				</fx:Component>
+			</esri:infoRenderer>
+		</esri:InfoSymbol>
+		
+		<!-- End Info Box Symbol -->
+		
+		<esri:QueryTask id="quadTask" useAMF="false" proxyURL="{resourceManager.getString('urls', 'proxyUrl')}"
+						url="{resourceManager.getString('urls', 'dataSourceUrl')}/4" showBusyCursor="true"/>
+		<esri:Query id="quadQuery" returnGeometry="false">
+			<esri:outFields>
+				<fx:String>QUAD_NAME</fx:String>
+			</esri:outFields>
+		</esri:Query>
+		
+		<esri:QueryTask id="quadTask2" useAMF="false" proxyURL="{resourceManager.getString('urls', 'proxyUrl')}"
+						url="{resourceManager.getString('urls', 'dataSourceUrl')}/5" showBusyCursor="true"/>
+		
+	</fx:Declarations>
+	
+	
+	
+	<!-- Main Map -->
+	
+	<mx:Canvas id="mapContainer" width="100%" height="100%">
+		
+		<esri:Map id="map" scrollWheelZoomEnabled="true" load="load()" wrapAround180="true" styleName="mapStyle" openHandCursorVisible="false" logoVisible="true" navigationClass="gov.usgs.wim.controls.WiMNavigation" mapClick="onMapClick(event)" extentChange="onExtentChange(event)">
+			<esri:extent>            
+				<esri:Extent id="init" xmin="-16397882.803961465" ymin="1731757.3128320083" xmax="-4891969.810253511" ymax="7602121.085131983">                
+					<esri:SpatialReference wkid="102100"/>            
+				</esri:Extent>        
+			</esri:extent>		
+			<esri:ArcGISTiledMapServiceLayer            
+				visible="{baseLayers.selectedLayer == 0}"            
+				show="baseSwitch(event)"            
+				url="http://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer" />
+			<esri:ArcGISTiledMapServiceLayer            
+				visible="{baseLayers.selectedLayer == 1}"            
+				show="baseSwitch(event)"            
+				url="http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer" />
+			<esri:ArcGISTiledMapServiceLayer    
+				id="labelsMapLayer"
+				visible="{baseLayers.selectedLayer == 1 &amp;&amp; baseLayers.showLabels}"            
+				show="baseSwitch(event)"            
+				url="http://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer" />
+			<esri:ArcGISTiledMapServiceLayer            
+				visible="{baseLayers.selectedLayer == 2}"            
+				show="baseSwitch(event)"            
+				url="http://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer" />  
+			<esri:ArcGISTiledMapServiceLayer            
+				visible="{baseLayers.selectedLayer == 3}"            
+				show="baseSwitch(event)"            
+				url="http://services.arcgisonline.com/ArcGIS/rest/services/USA_Topo_Maps/MapServer" />
+			<esri:ArcGISDynamicMapServiceLayer
+				id="dataSourceInfo"
+				visible="{dataSourceInfoToggle.selected}"
+				alpha="0.6"
+				url="{resourceManager.getString('urls', 'dataSourceUrl')}" proxyURL="{resourceManager.getString('urls', 'proxyUrl')}">
+				<esri:visibleLayers>                
+					<mx:ArrayCollection id="dataSourceVis">                    
+						<fx:Number>1</fx:Number>                
+					</mx:ArrayCollection>            
+				</esri:visibleLayers>
+			</esri:ArcGISDynamicMapServiceLayer>
+			<esri:ArcGISDynamicMapServiceLayer
+				id="riparianStatus"
+				visible="{riparianStatusToggle.selected}"
+				alpha="0.7"
+				url="{resourceManager.getString('urls', 'riparianUrl')}" proxyURL="{resourceManager.getString('urls', 'proxyUrl')}">
+				<esri:visibleLayers>
+					<mx:ArrayCollection id="ripStatusVis">
+						<fx:Number>1</fx:Number>
+					</mx:ArrayCollection>
+				</esri:visibleLayers>
+			</esri:ArcGISDynamicMapServiceLayer>
+			<esri:ArcGISDynamicMapServiceLayer
+				id="riparian"
+				visible="{riparianToggle.selected}"
+				alpha="0.7"
+				url="{resourceManager.getString('urls', 'riparianUrl')}" proxyURL="{resourceManager.getString('urls', 'proxyUrl')}">
+				<esri:visibleLayers>
+					<mx:ArrayCollection id="ripVis">
+						<fx:Number>0</fx:Number>
+					</mx:ArrayCollection>
+				</esri:visibleLayers>
+			</esri:ArcGISDynamicMapServiceLayer>
+			<esri:ArcGISDynamicMapServiceLayer
+				id="status"
+				visible="{(wetlandsToggle.selected &amp;&amp; map.level &lt; 12) ? true : false}"
+				alpha="0.6"
+				url="{resourceManager.getString('urls', 'wetlandsStatusUrl')}" proxyURL="{resourceManager.getString('urls', 'proxyUrl')}">
+				<esri:visibleLayers>
+					<mx:ArrayCollection>
+						<fx:Number>0</fx:Number>
+					</mx:ArrayCollection>
+				</esri:visibleLayers>
+			</esri:ArcGISDynamicMapServiceLayer>
+			<esri:ArcGISDynamicMapServiceLayer
+				id="noDataStatus"
+				visible="{(wetlandsToggle.selected &amp;&amp; map.level &gt; 11) ? true : false}"
+				alpha="0.6"
+				url="{resourceManager.getString('urls', 'wetlandsStatusUrl')}" proxyURL="{resourceManager.getString('urls', 'proxyUrl')}">
+				<esri:layerDefinitions>
+					<esri:LayerDefinition layerId="0" definition="STATUS = 'No_Data'" />
+				</esri:layerDefinitions>
+				<esri:visibleLayers>
+					<mx:ArrayCollection>
+						<fx:Number>0</fx:Number>
+					</mx:ArrayCollection>
+				</esri:visibleLayers>
+			</esri:ArcGISDynamicMapServiceLayer>
+			<esri:ArcGISDynamicMapServiceLayer
+				id="wetlands" 
+				load="wetlands_loadHandler(event)"
+				visible="{(wetlandsToggle.selected &amp;&amp; map.level &gt; 11) ? true : false}"
+				alpha="0.6"
+				url="{resourceManager.getString('urls', 'wetlandsUrl')}" proxyURL="{resourceManager.getString('urls', 'proxyUrl')}">
+				<esri:visibleLayers>
+					<mx:ArrayCollection>
+						<fx:Number>0</fx:Number>
+					</mx:ArrayCollection>
+				</esri:visibleLayers>
+			</esri:ArcGISDynamicMapServiceLayer>
+			<esri:ArcGISImageServiceLayer
+				id="wetlandsRaster"
+				visible="{(wetlandsToggle.selected &amp;&amp; map.level &lt; 12) ? true : false}"
+				alpha="0.6"
+				url="{resourceManager.getString('urls', 'wetlandsRasterUrl')}" proxyURL="{resourceManager.getString('urls', 'proxyUrl')}">
+			</esri:ArcGISImageServiceLayer>
+			<!-- Wetlands Topo layer: test -->
+			<!--<esri:ArcGISDynamicMapServiceLayer
+				id="wetlandsTopo"
+				visible="{(wetlandsToggle.selected &amp;&amp; map.level &gt; 11) ? true : false}"
+				alpha="1"
+				url="http://107.20.228.18/ArcGIS/rest/services/WetlandsTopo/WetlandsTopoService/MapServer" >
+			</esri:ArcGISDynamicMapServiceLayer>-->
+			<!-- End Wetlands Topo layer for testing -->
+			<esri:GraphicsLayer id="wetQueryGraphics" />
+			<!-- begin service to hide for main mapper: test-->
+			<!--<esri:ArcGISDynamicMapServiceLayer
+				id="swi"
+				visible="{swiToggle.selected}"
+				alpha="0.6"
+				url="http://107.20.228.18/ArcGIS/rest/services/SWI/MapServer" />-->
+			<!-- end service to hide for main mapper: test -->
+			<esri:ArcGISDynamicMapServiceLayer
+				id="historicQuad"
+				visible="{historicQuadToggle.selected}"
+				alpha="0.7"
+				url="{resourceManager.getString('urls', 'historicUrl')}" proxyURL="{resourceManager.getString('urls', 'proxyUrl')}">
+				<esri:visibleLayers>
+					<mx:ArrayCollection>
+						<fx:Number>0</fx:Number>
+						<fx:Number>1</fx:Number>
+					</mx:ArrayCollection>
+				</esri:visibleLayers>
+			</esri:ArcGISDynamicMapServiceLayer>
+			<esri:ArcGISDynamicMapServiceLayer
+				id="fwsRefuge"
+				visible="{fwsRefugeToggle.selected}"
+				alpha="0.7"
+				visibleLayers="{(map.level &lt; 6) ? new ArrayCollection([0]) : (map.level &lt; 13) ? new ArrayCollection([3]) : new ArrayCollection([1,3])}"
+				url="{resourceManager.getString('urls', 'fwsRefugesUrl')}" >
+			</esri:ArcGISDynamicMapServiceLayer>
+			<esri:FeatureLayer id="POI" 
+							   mode="onDemand"
+							   visible="{poiToggle.selected}"
+							   symbol="{pinSym}" 
+							   outFields="[NAME,TYPE,HYPERLINK,WATER_SUMMARY_REPORT,STATE_ACTION_PLAN]"
+							   url="{resourceManager.getString('urls', 'areasOfInterestUrl')}" proxyURL="{resourceManager.getString('urls', 'proxyUrl')}">
+				<esri:infoWindowRenderer>
+					<fx:Component>
+						<esri:LabelDataRenderer>
+							<fx:Style>
+								@namespace esri "http://www.esri.com/2008/ags";
+								
+								/* The "header" of the InfoWindow */
+								esri|InfoWindowLabel
+								{
+									color: black;
+									width: 100px;
+								}
+								
+								esri|InfoWindow
+								{
+									background-color: black;         
+								}
+								
+							</fx:Style>
+							<esri:label>{data.NAME}</esri:label>
+							<mx:VBox styleName="poiContain" verticalGap="0" borderStyle="solid" width="100%" paddingTop="10" paddingBottom="5" paddingLeft="5" paddingRight="5" cornerRadius="5">
+								<mx:HBox width="100%" horizontalGap="0"><mx:Label text="Type: " fontWeight="bold" /><mx:Text text="{data.TYPE}" /></mx:HBox>
+								<mx:HBox width="100%" horizontalGap="0"><mx:Label text="Location Website: " fontWeight="bold" /><mx:Label text="click here" styleName="line" color="blue" click="navigateToURL(new URLRequest(data.HYPERLINK))" useHandCursor="true" buttonMode="true" mouseChildren="false" /></mx:HBox> <!--Exit script info: 'http://www.fws.gov/scripts/exit.cfm?link='+ -->
+								<mx:HBox width="100%" horizontalGap="0"><mx:Label text="Water Summary Report: "  fontWeight="bold" /><mx:Text visible="true" styleName="line" text="click here" click="navigateToURL(new URLRequest(data.WATER_SUMMARY_REPORT))" useHandCursor="true" buttonMode="true" mouseChildren="false" /></mx:HBox>
+								<mx:HBox width="100%" horizontalGap="0"><mx:Label text="Wildlife Action Plan: " fontWeight="bold" /><mx:Text visible="true" styleName="line" text="click here" click="navigateToURL(new URLRequest(data.STATE_ACTION_PLAN))" useHandCursor="true" buttonMode="true" mouseChildren="false" /></mx:HBox>
+							</mx:VBox>
+						</esri:LabelDataRenderer>
+					</fx:Component>
+				</esri:infoWindowRenderer>
+			</esri:FeatureLayer>
+			<esri:FeatureLayer
+				id="hucFeatures"
+				mode="onDemand"
+				maxAllowableOffset="{(map.level &lt; 8) ? 2000 : (map.level &lt; 10) ? 1000 : (map.level &gt; 13) ? 200 : 500}"
+				alpha="0"
+				graphicAdd="hucAddHandler(event)"
+				outFields="*"
+				visible="{(watershedsForDownload.visible &amp;&amp; map.level &gt; 6) ? true : false}"
+				url="{resourceManager.getString('urls', 'huc8Url')+'/0'}" proxyURL="{resourceManager.getString('urls', 'proxyUrl')}">
+			</esri:FeatureLayer>
+			<esri:ArcGISDynamicMapServiceLayer
+				id="watershedsForDownload"
+				visible="false"
+				alpha="0.6"
+				url="{resourceManager.getString('urls', 'huc8Url')}" proxyURL="{resourceManager.getString('urls', 'proxyUrl')}"/>
+			<esri:ArcGISDynamicMapServiceLayer
+				id="watershedsHighlight"
+				visible="false"
+				url="{resourceManager.getString('urls', 'huc8Url')}" proxyURL="{resourceManager.getString('urls', 'proxyUrl')}">
+				<esri:visibleLayers>
+					<mx:ArrayCollection>
+						<fx:Number>1</fx:Number>
+					</mx:ArrayCollection>
+				</esri:visibleLayers>
+			</esri:ArcGISDynamicMapServiceLayer>
+			<esri:GraphicsLayer id="measureLayer" />
+			<esri:GraphicsLayer id="wetQueryGraphicsLayer" />
+			<esri:GraphicsLayer id="watershedGraphicsLayer" />
+			<esri:GraphicsLayer id="geoCodeGraphicsLayer" />
+			<esri:GraphicsLayer id="wetInfo" />
+		</esri:Map>
+		
+	</mx:Canvas>
+	
+	
+	<!-- End Main Map -->
+	
+	<mx:Box id="mapMask" visible="true" backgroundColor="gray" width="100%" height="100%" />
+	
+	<!-- Header --> 
+	
+	<mx:Canvas id="header" scaleX=".75" scaleY=".75">
+		<mx:VBox color="white" backgroundColor="white" borderStyle="solid" borderColor="black" cornerRadius="5" top="10" left="10"
+				 useHandCursor="true" buttonMode="true" mouseChildren="false" toolTip="National Wetlands Inventory" click="navigateToURL(new URLRequest('http://www.fws.gov/wetlands/index.html'))">
+			<mx:HBox>
+				<mx:VBox>
+					<mx:Box backgroundColor="white" width="100%" height="5" />
+					<mx:Box backgroundColor="black" width="100%">
+						<mx:Label text="{resourceManager.getString('ui.text', 'mainTitle')}" width="100%" color="white" fontFamily="Arial, Helvetica, sans-serif" fontWeight="bold" paddingLeft="120" paddingTop="5" paddingBottom="-2" fontSize="18"/>
+					</mx:Box>
+					<mx:Box backgroundColor="white" width="100%">
+						<mx:Label text="{resourceManager.getString('ui.text', 'subTitle')}" color="0x462300" paddingRight="15" paddingTop="-10" paddingBottom="-14" fontFamily="Arial Narrow, Helvetica, sans-serif" fontWeight="bold" paddingLeft="120" fontSize="35"/>
+					</mx:Box>
+					<mx:Box backgroundColor="0x330000" width="100%" height="20" />
+				</mx:VBox>
+			</mx:HBox>
+		</mx:VBox>
+		<mx:Image id="headerLogo" source="./assets/images/fwsLogo.png" top="15" left="35" useHandCursor="true" buttonMode="true" mouseChildren="false" toolTip="U.S. Fish and Wildlife Service Home" click="navigateToURL(new URLRequest('http://www.fws.gov'))"/>
+	</mx:Canvas>
+	
+	<!--<mx:Canvas>
+		<mx:HBox id="header" color="white" backgroundColor="black" borderStyle="solid" borderColor="black" cornerRadius="5" top="5" left="5" paddingTop="5" paddingBottom="5" paddingLeft="5" paddingRight="5"> 
+			<mx:Image id="headerLogo" source="./assets/images/usgsLogoSm.jpg" useHandCursor="true" buttonMode="true" mouseChildren="false" toolTip="USGS" click="navigateToURL(new URLRequest('http://www.usgs.gov'))" />
+			<mx:VBox backgroundColor="black" width="100%" paddingLeft="5" paddingRight="10" paddingTop="-3" verticalGap="0" fontWeight="bold" fontFamily="Arial, Helvetica, sans-serif" >
+				<mx:Label text="Wetlands Mapper 2.0" color="white" fontSize="22"/>
+				<mx:Label text="Beta Version" color="0xDDDDDD" fontSize="18"/>			
+			</mx:VBox>
+		</mx:HBox>
+	</mx:Canvas>-->
+	
+	<!-- End Header --> 
+	
+	
+	<!-- Controls -->
+	
+	<wimControls:FullScreenButton top="5" right="5" alpha="{genAlpha}" />
+	
+	<mx:Box id="zoomTo" color="white" cornerRadius="5" borderColor="black" borderStyle="solid" backgroundColor="black" backgroundAlpha="{genAlpha}" top="45" right="5" paddingBottom="2" paddingLeft="5" paddingRight="5" paddingTop="5" >
+		<wimControls:ZoomSelector extents="{areaExtents}" prompt="select" selectorTitle="Zoom to:" targetMap="{map}" sort="false" />
+	</mx:Box>
+	
+	<wimControls:CollapsingSearch id="geocoder" 
+								  startCollapsed="false"
+								  styleName="controlBoxTrans"
+								  top="45" 
+								  right="200" 
+								  width="260"
+								  searchHint="{resourceManager.getString('ui.text', 'geocodeSearchHintText')}"
+								  searchButtonText="{resourceManager.getString('ui.text', 'geocodeSearchButtonText')}"
+								  searchFunction="{geoCode}" />
+	
+	<mx:HBox id="printButton" alpha="{genAlpha}" top="5" right="405" color="white" backgroundColor="black" borderColor="black" borderStyle="solid" cornerRadius="5" paddingBottom="5" paddingLeft="5" paddingRight="5" paddingTop="5" >
+		<mx:Button label="Print Map" styleName="button" click="startPrint(event)" />
+	</mx:HBox>
+	
+	<wimControls:BaseMapSelector id="baseLayers" textOnly="true" buttonArray="{textArray}" alpha="{genAlpha}" top="5" right="60" creationComplete="{baseLayers.selectedLayer = 1; baseLayers.showLabels = true;}" />
+	
+	<wimControls:ExtentNavigator targetMap="{map}" alpha="{genAlpha}" mini="true" fullExtent="{init}" targetNavigation="{navToolbar}" id="navigation" styleName="controlBox" top="95" left="10" />
+	
+	<mx:HBox id="tools" top="5" right="505" alpha="{genAlpha}" color="white" backgroundColor="black" borderColor="black" borderStyle="solid" cornerRadius="5" paddingBottom="5" paddingLeft="5" paddingRight="5" paddingTop="5" >
+		<mx:PopUpButton id="toolPop" textRollOverColor="black" color="white" popUpStyleName="Pop" iconColor="white" label="Tools" creationComplete="initToolPop();" /> 
+	</mx:HBox>
+	
+	<localControls:MeasureMap id="measureTool" top="100" right="500" visible="false" />
+	
+	<!-- End Controls -->
+	
+	<!-- Custom legend/layer toggling -->
+	
+	<wimControls:CollapsingBox id="controlLayers" 
+							   top="85" 
+							   right="5"	
+							   startCollapsed="false"	
+							   boxTitle="Available Layers">
+		<wimControls:contentGroup>
+			<s:VGroup id="layersVGroup"
+				width="260">
+				<mx:Text id="help1" text="Help" paddingLeft="{layersVGroup.width-30}" 
+						 paddingTop="-5" useHandCursor="true" buttonMode="true" right="5" 
+						 mouseChildren="false" textDecoration="underline" horizontalCenter="right" 
+						 color="0xFFFFFF" fontWeight="bold" fontSize="10" click="navigateToURL(new URLRequest('http://www.fws.gov/wetlands/FAQs.html'))" />
+				<s:Group width="100%" bottom="10">
+					<s:Rect width="100%" height="100%">
+						<s:fill><s:SolidColor color="black" /></s:fill>
+					</s:Rect>
+					<s:VGroup paddingTop="5" paddingLeft="5" paddingBottom="10">
+						<s:VGroup id="layerToggles" paddingTop="5" paddingLeft="10">
+							<s:HGroup>
+								<wimControls:LayerToggle id="wetlandsToggle" adjustOpacity="true" serviceLayerID="wetlands" layerTitle="Wetlands" creationComplete="{wetlandsToggle.selected = true;}" />
+								<s:HGroup>
+									<mx:Box borderStyle="solid" useHandCursor="true" buttonMode="true" mouseChildren="false" toolTip="layer information" click="navigateToURL(new URLRequest(resourceManager.getString('urls', 'wetlandsMetadataUrl')))" borderColor="0x444444" borderThickness="1" backgroundColor="0xCCCCCC" paddingBottom="-3" paddingLeft="1" paddingRight="-1" paddingTop="-2">
+										<mx:Text text="?" color="blue" fontWeight="bold" />
+									</mx:Box>
+									<mx:Box borderStyle="solid" useHandCursor="true" buttonMode="true" mouseChildren="false" toolTip="zoom to wetlands" click="if (map.level &lt; 12) { map.level = 12 }; if (!wetlands.visible) { wetlandsToggle.enabled = true; wetlandsToggle.selected = true; }" borderColor="0x444444" borderThickness="1" backgroundColor="0xCCCCCC" >
+										<mx:Image width="16" height="16" source="{resourceManager.getString('ui.graphics', 'magnifyingGlass')}" />
+									</mx:Box>
+								</s:HGroup>
+							</s:HGroup>
+							<!--<wimControls:LayerToggle id="statusToggle" adjustOpacity="true" serviceLayerID="status" layerTitle="Wetland Status" selected="{status.visible}" />-->
+							<s:HGroup>
+								<wimControls:LayerToggle id="riparianToggle" adjustOpacity="true" serviceLayerID="riparian" layerTitle="Riparian" selected="{riparian.visible}" creationComplete="{riparianToggle.selected = false}" />
+								<s:HGroup>
+									<mx:Box borderStyle="solid" useHandCursor="true" buttonMode="true" mouseChildren="false" toolTip="layer information" click="navigateToURL(new URLRequest(resourceManager.getString('urls', 'riparianMetadataUrl')))" borderColor="0x444444" borderThickness="1" backgroundColor="0xCCCCCC" paddingBottom="-3" paddingLeft="1" paddingRight="-1" paddingTop="-2">
+										<mx:Text text="?" color="blue" fontWeight="bold" />
+									</mx:Box>
+									<mx:Box borderStyle="solid" useHandCursor="true" buttonMode="true" mouseChildren="false" toolTip="zoom to riparian layer" click="if (map.level &lt; 12) { map.level = 12 }; if (!riparianToggle.selected) { riparianToggle.selected = true; }" borderColor="0x444444" borderThickness="1" backgroundColor="0xCCCCCC" >
+										<mx:Image width="16" height="16" source="{resourceManager.getString('ui.graphics', 'magnifyingGlass')}" />
+									</mx:Box>
+								</s:HGroup>
+							</s:HGroup>
+							<wimControls:LayerToggle id="riparianStatusToggle" adjustOpacity="true" serviceLayerID="riparianStatus" layerTitle="Riparian Mapping Areas" selected="{riparianStatus.visible}" creationComplete="{riparianStatusToggle.selected = false}" />
+							<wimControls:LayerToggle id="dataSourceInfoToggle" adjustOpacity="true" serviceLayerID="dataSourceInfo" layerTitle="Data Source" selected="{dataSourceInfo.visible}" creationComplete="{dataSourceInfoToggle.selected = false}" />
+							<s:VGroup paddingLeft="40">
+								<s:RadioButton group="{dataSourceOpt}"
+											   id="imageType"
+											   selected="true"
+											   label="Source Type" 
+											   click="{dataSourceVis.removeItemAt(0); dataSourceVis.addItem(1); dataSourceInfo.refresh();}"
+											   value="emulsion"/>
+								<s:RadioButton group="{dataSourceOpt}"
+											   id="imageScale"
+											   label="Image Scale" 
+											   click="{dataSourceVis.removeItemAt(0); dataSourceVis.addItem(2); dataSourceInfo.refresh();}"
+											   value="scale" />
+								<s:RadioButton group="{dataSourceOpt}"
+											   id="imageYear" 
+											   label="Image Year" 
+											   click="{dataSourceVis.removeItemAt(0); dataSourceVis.addItem(3); dataSourceInfo.refresh();}"
+											   value="year" />
+							</s:VGroup>
+							<s:HGroup>
+								<wimControls:LayerToggle id="poiToggle" adjustOpacity="false" serviceLayerID="POI" layerTitle="Areas of Interest" selected="{POI.visible}" creationComplete="{poiToggle.selected = false}" />
+								<s:HGroup>
+									<mx:Box borderStyle="solid" useHandCursor="true" buttonMode="true" mouseChildren="false" toolTip="Metadata Information" 
+											click="navigateToURL(new URLRequest(resourceManager.getString('urls', 'POIMetadataUrl')))" 
+											borderColor="0x444444" borderThickness="1" backgroundColor="0xCCCCCC" paddingBottom="-3" paddingLeft="1" paddingRight="-1" paddingTop="-2">
+										<mx:Text text="?" color="blue" fontWeight="bold" />
+									</mx:Box>
+								</s:HGroup>
+							</s:HGroup>
+							<s:HGroup>
+								<wimControls:LayerToggle id="fwsRefugeToggle" serviceLayerID="fwsRefuge" layerTitle="FWS Refuges" selected="{fwsRefuge.visible}" creationComplete="{fwsRefugeToggle.selected = false}" />
+								<s:HGroup>
+									<mx:Box borderStyle="solid" useHandCursor="true" buttonMode="true" mouseChildren="false" toolTip="metadata information" click="navigateToURL(new URLRequest(resourceManager.getString('urls', 'refugeMetadataUrl')))" borderColor="0x444444" borderThickness="1" backgroundColor="0xCCCCCC" paddingBottom="-3" paddingLeft="1" paddingRight="-1" paddingTop="-2">
+										<mx:Text text="?" color="blue" fontWeight="bold" />
+									</mx:Box>
+								</s:HGroup>
+							</s:HGroup>
+							<s:HGroup>
+								<wimControls:LayerToggle id="historicQuadToggle" serviceLayerID="historicQuad" layerTitle="Historic Wetland Data" selected="{historicQuad.visible}" creationComplete="{historicQuadToggle.selected = false}"/>
+								<s:HGroup>
+									<mx:Box borderStyle="solid" useHandCursor="true" buttonMode="true" mouseChildren="false" toolTip="metadata information" click="navigateToURL(new URLRequest(resourceManager.getString('urls', 'historicMetadataUrl')))" borderColor="0x444444" borderThickness="1" backgroundColor="0xCCCCCC" paddingBottom="-3" paddingLeft="1" paddingRight="-1" paddingTop="-2">
+										<mx:Text text="?" color="blue" fontWeight="bold" />
+									</mx:Box>
+								</s:HGroup>
+							</s:HGroup>
+							<!-- begin service to hide for main mapper: test-->
+							<!--<s:HGroup>
+								<wimControls:LayerToggle id="swiToggle" adjustOpacity="true" serviceLayerID="swi" layerTitle="SWI" selected="{swi.visible}" />
+								<mx:Box borderStyle="solid" useHandCursor="true" buttonMode="true" mouseChildren="false" toolTip="zoom to surface water inventory" click="if (map.level &lt; 12) { map.level = 12 }; if (!swi.visible) { swiToggle.enabled = true; swiToggle.selected = true; }" borderColor="0x444444" borderThickness="1" backgroundColor="0xCCCCCC" >
+									<mx:Image width="16" height="16" source="{resourceManager.getString('ui.graphics', 'magnifyingGlass')}" />
+								</mx:Box>
+							</s:HGroup>-->
+							<!-- end service to hide for main mapper: test-->
+						</s:VGroup>
+					</s:VGroup>
+				</s:Group>
+				<mx:Box id="legendContainer" backgroundColor="black" width="100%" maxHeight="{FlexGlobals.topLevelApplication.height-layerToggles.height-180}" verticalScrollPolicy="{(legendContainer.height == legendContainer.maxHeight) ? 'on' : 'off'}" >
+					<s:VGroup paddingTop="5" paddingLeft="5" paddingRight="5" gap="0">
+						<localControls:MapServiceLegend id="wetlandsLegend" map="{map}" serviceLayer="{wetlands}" infoUrl="{resourceManager.getString('urls', 'wetlandsLegendInfoUrl')}" proxyUrl="{resourceManager.getString('urls', 'proxyUrl')}" serviceLayerVisibility="false" legendWidth="250" visible="{wetlandsToggle.selected}" includeInLayout="{wetlandsToggle.selected}" /> <!--legendFilter="['Lake','Other','Riverine']"/>-->
+						<localControls:MapServiceLegend id="statusLegend" map="{map}" serviceLayer="{status}" proxyUrl="{resourceManager.getString('urls', 'proxyUrl')}" legendWidth="250" legendFilter="['Digital Data','No Data']" />
+						<localControls:MapServiceLegend id="noDataStatusLegend" map="{map}" serviceLayer="{noDataStatus}" proxyUrl="{resourceManager.getString('urls', 'proxyUrl')}" legendWidth="250" legendFilter="['No Data']" />
+						<localControls:MapServiceLegend id="riparianLegend" map="{map}" serviceLayer="{riparian}" proxyUrl="{resourceManager.getString('urls', 'proxyUrl')}" legendWidth="250"/>
+						<localControls:MapServiceLegend id="riparianStatusLegend" map="{map}" serviceLayer="{riparianStatus}" proxyUrl="{resourceManager.getString('urls', 'proxyUrl')}" legendWidth="250"/>
+						<localControls:MapServiceLegend id="dataSourceLegend" map="{map}" serviceLayer="{dataSourceInfo}" proxyUrl="{resourceManager.getString('urls', 'proxyUrl')}" legendWidth="250" needsUpdates="true"/>
+						<s:Group width="100%" height="100%">
+							<s:Rect width="100%" height="100%">
+								<s:fill><s:SolidColor color="#f4f1dd" /></s:fill>
+							</s:Rect>
+							<s:HGroup width="250" paddingBottom="10" paddingLeft="10" paddingTop="10" 
+								  visible="{POI.visible}" includeInLayout="{POI.visible}" 
+								  color="black">
+								<s:Image source="@Embed(source='assets/images/grn-pushpin.png')" />
+								<s:Label text="Area of Interest" fontSize="10" paddingTop="10" />
+							</s:HGroup>
+						</s:Group>
+						<localControls:MapServiceLegend id="fwsRefugesLegend" map="{map}" serviceLayer="{fwsRefuge}" legendWidth="250"/>
+						<s:Label text="Historic wetlands" width="250" fontSize="11" fontWeight="bold" visible="{historicQuad.visible}" includeInLayout="{historicQuad.visible}" 
+								 paddingBottom="0" paddingLeft="10" paddingTop="10" color="black" backgroundColor="#f4f1dd" />
+						<localControls:MapServiceLegend id="historicLegend" map="{map}" legendTitle="" serviceLayer="{historicQuad}" legendWidth="250"/>
+					</s:VGroup>
+				</mx:Box>
+			</s:VGroup>
+		</wimControls:contentGroup>
+	</wimControls:CollapsingBox>
+	<!-- End Custom legend/layer toggling -->
+	
+	<!-- Shows Map Scale and Lat Long Box -->
+	<wimControls:CoordsScale id="coordsScale" map="{map}" alpha="0.6" bottom="10" width="100%" />
+	
+	<!-- Loading Screen -->
+	<wimControls:BasicLoadingScreen id="loadingScreen" visible="false" alpha="0.6" />
+	
+	<!-- Zeroes for scale bar in bottom left corner to add to context -->
+	<mx:VBox id="scaleZeroes" color="white" fontSize="10" fontWeight="bold" bottom="10" left="2" >
+		<mx:Image source="{(level == 17 || level == 18 || level == 19) ? 'assets/images/0m.png' : 'assets/images/0km.png'}" height="17" />
+		<mx:Box height="9" />
+		<mx:Image source="{(level == 17 || level == 18 || level == 19) ? 'assets/images/0ft.png' : 'assets/images/0mi.png'}" height="17" />
+	</mx:VBox>
+	
+	<!-- Print Input From -->
+	<mx:Box id="printFormBox" visible="false" alpha="0" top="5" right="5" backgroundColor="0x000000" borderStyle="solid" cornerRadius="5" paddingBottom="5" paddingLeft="5" paddingRight="5" paddingTop="5">
+		<mx:Grid width="100%">
+			<mx:GridRow width="100%">
+				<mx:GridItem width="100%" horizontalAlign="right">
+					<mx:Label text="close form" textDecoration="underline" color="#8484E2" buttonMode="true" useHandCursor="true" mouseChildren="false" click="closePrintForm()"/>
+				</mx:GridItem>
+			</mx:GridRow>
+		</mx:Grid>
+		<mx:Form id="printForm" backgroundColor="Gray" borderThickness="1" borderColor="0xFFFFFF" cornerRadius="5" borderStyle="solid" >
+			<mx:FormHeading label="Print Options" />
+			<mx:FormItem label="Title:">
+				<mx:TextInput id="printTitle" />
+				<mx:Text id="titleValText" visible="false" includeInLayout="false" text=" * Maximum of 40 characters" color="maroon" fontWeight="bold" />
+			</mx:FormItem>
+			<mx:FormItem label="Remarks:">
+				<mx:TextArea id="printNotes"/>
+				<mx:Text id="remarksValText" visible="false" includeInLayout="false" text="* Maximum of 125 characters" color="maroon" fontWeight="bold" />
+			</mx:FormItem>
+			<mx:FormItem>
+				<mx:Button id="printSubmit" label="Submit" click="pdfPrep()" />
+			</mx:FormItem>
+		</mx:Form>
+		<mx:VBox id="printCheck" visible="false" color="white" width="100%">
+			<mx:HBox visible="{map.level &lt; 12}" includeInLayout="{map.level &lt; 12}">
+				<mx:CheckBox id="wetCheck" click="printUpdate(event)" />
+				<mx:Text text="Wetland Status" fontWeight="bold" />
+			</mx:HBox>
+			<mx:HBox>
+				<mx:CheckBox id="ripCheck" click="printUpdate(event)" />
+				<mx:Text text="Riparian Status" fontWeight="bold" />
+			</mx:HBox>
+			<mx:HBox>
+				<mx:CheckBox id="dataSourceCheck" click="printUpdate(event)" />
+				<mx:Text text="Data Source" fontWeight="bold" />
+			</mx:HBox>
+		</mx:VBox>
+		<mx:Box id="printOK" color="red" width="100%">
+			<mx:Text id="printOKText" width="100%" text="Only one status or data source layer can be printed at a time.  Please deselect all but the layer you wish to print" />
+		</mx:Box>
+	</mx:Box>
+	<!-- End of print form -->
+	
+	<mx:Box id="printStatus" alpha="{genAlpha}" bottom="60" width="100%" horizontalAlign="center" visible="false" >
+		<mx:Box color="white" backgroundColor="0x000000" borderStyle="solid" borderColor="white" cornerRadius="5" paddingBottom="5" paddingLeft="5" paddingRight="5" paddingTop="5" >
+			<mx:Text id="printStatusText" text="Print request begun ..." />
+		</mx:Box>
+	</mx:Box>
+	
+	<!-- PDF declarations -->
+	<mx:Canvas id="pdfHeader" visible="false">
+		<mx:VBox color="white" backgroundColor="white" borderStyle="solid" borderColor="black" cornerRadius="5" width="693" height="99">
+			<mx:HBox>
+				<mx:VBox>
+					<mx:Box backgroundColor="white" width="100%" height="5" />
+						<mx:Box backgroundColor="black" width="100%">
+							<mx:Label text="U.S. Fish and Wildlife Service" color="white" fontFamily="Arial, Helvetica, sans-serif" fontWeight="bold" paddingLeft="120" paddingTop="5" paddingBottom="-2" fontSize="18"/>
+						</mx:Box>
+					<mx:Box backgroundColor="white" width="100%">
+						<mx:Label text="National Wetlands Inventory" color="0x462300" paddingRight="175" paddingTop="-10" paddingBottom="-14" paddingLeft="120" fontFamily="Arial Narrow, Helvetica, sans-serif" fontWeight="bold" fontSize="35"/>
+					</mx:Box>
+				<mx:Box backgroundColor="0x330000" width="100%" height="20" />
+				</mx:VBox>
+			</mx:HBox>
+		</mx:VBox>
+		<mx:Image id="pdfLogo" source="./assets/images/fwsLogo.png" top="5" left="25" />
+	</mx:Canvas>
+	
+	<mx:Image id="wetPrintExp" source="@Embed(source='assets/images/exps/Wetlands.gif')" visible="false" />
+	<mx:Image id="statPrintExp" source="@Embed(source='assets/images/exps/Wetland_status.gif')" visible="false" />
+	<mx:Image id="ripPrintExp" source="@Embed(source='assets/images/exps/Riparian.gif')" visible="false" />
+	<mx:Image id="ripStatPrintExp" source="@Embed(source='assets/images/exps/Riparian_status.gif')" visible="false" />
+	<mx:Image id="imgTypePrintExp" source="@Embed(source='assets/images/exps/Source_type.gif')" visible="false" />
+	<mx:Image id="imgScalePrintExp" source="@Embed(source='assets/images/exps/Image_scale.gif')" visible="false" />
+	<mx:Image id="imgYearPrintExp" source="@Embed(source='assets/images/exps/Image_year.gif')" visible="false" />
+	
+	<!-- Form for data extract gp tool using current extent -->
+	<mx:VBox id="downloadForm" alpha="{genAlpha}" visible="false" color="white" fontWeight="bold" backgroundColor="0x000000" borderStyle="solid" borderColor="black" cornerRadius="5" paddingBottom="5" paddingLeft="5" paddingRight="5" paddingTop="5"  >
+		<mx:HBox width="100%">
+			<mx:Label text="Download Data" fontSize="14"/>
+			<mx:HBox width="100%" horizontalGap="0" />
+			<mx:Button styleName="InfoCloseButton" height="18" width="18" click="downloadClose()"/>
+		</mx:HBox>
+		<mx:Box color="black" backgroundColor="0xFFFFFF" borderStyle="solid" borderColor="black" cornerRadius="5" paddingBottom="5" paddingLeft="5" paddingRight="5" paddingTop="5" >
+			<mx:Box horizontalAlign="center" verticalGap="0" width="100%">
+				<mx:Text id="downloadNote" color="#692301" fontWeight="bold" width="225">
+					<mx:htmlText>
+						<![CDATA[Enter an email address to receive a ZIP file containing a compressed file geodatabase and shapefiles of the current visible extent. This process may take several minutes.  For more information, please visit <u><a target='_blank' style='color: blue' href='http://www.fws.gov/wetlands/Data/Data-Download.html'><font color='#0000FF'>this site</font></a></u>.]]>
+					</mx:htmlText>
+				</mx:Text>
+			</mx:Box>
+			<mx:Text text="email: " />
+			<mx:HBox>
+				<mx:TextInput id="downloadEmail" width="150" enter="wetlandDownloadFunc(map.extent)" />
+				<mx:Button id="downloadSubmit" label="Submit" click="wetlandDownloadFunc(map.extent)" />
+			</mx:HBox>
+		</mx:Box>
+	</mx:VBox>
+	
+	<!-- Form for data extract gp tool using watershed boundary -->
+	<mx:VBox id="watershedDownloadForm" alpha="{genAlpha}" visible="false" color="white" fontWeight="bold" backgroundColor="0x000000" borderStyle="solid" borderColor="black" cornerRadius="5" paddingBottom="5" paddingLeft="5" paddingRight="5" paddingTop="5"  >
+		<mx:HBox width="100%">
+			<mx:Label text="Download Data" fontSize="14"/>
+			<mx:HBox width="100%" horizontalGap="0" />
+			<!--<mx:Button label="X" fontSize="12" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" color="black" click="downloadClose()" />-->
+			<mx:Button color="black" styleName="InfoCloseButton" height="18" width="18" click="downloadClose()"/>
+		</mx:HBox>
+		<mx:Box color="black" backgroundColor="0xFFFFFF" borderStyle="solid" borderColor="black" cornerRadius="5" paddingBottom="5" paddingLeft="5" paddingRight="5" paddingTop="5" >
+			<mx:VBox horizontalAlign="left">
+				<mx:Text id="watershedStartDownloadNote" color="#692301" fontWeight="bold" width="225">
+					<mx:htmlText>
+						<![CDATA[<p>Please review the Data Download (<a target="_blank" href="http://www.fws.gov/wetlands/Data/Data-Download.html"><font color='#0000FF'>www.fws.gov/wetlands/Data/Data-Download.html</font></a>) page for information on how to download data, what is included in the download and data use limitations and disclaimer.</p><br/><p>Click the map to select a watershed from which to extract wetland data.</p>]]>
+					</mx:htmlText>
+				</mx:Text>
+				<s:VGroup id="watershedDownloadNote" visible="false">
+					<mx:Text text="Click the link below to download data for {HUCName} watershed (HUC {HUCNumber})" color="#692301" fontWeight="bold" width="225" />
+					<mx:Text id="hucDownloadLink" visible="true" styleName="line" text="click here to download" click="hucLinkListener()" useHandCursor="true" buttonMode="true" mouseChildren="false" />
+				</s:VGroup>
+				<!--<mx:Text id="watershedDownloadNote" visible="false" includeInLayout="false" color="#692301" fontWeight="bold" width="225">
+					<mx:htmlText>
+						<![CDATA[Enter an email address to receive a ZIP file containing a compressed file geodatabase and shapefiles in the currently selected watershed. This process may take several minutes.  For more information, please visit <u><a target='_blank' style='color: blue' href='http://www.fws.gov/wetlands/Data/Data-Download.html'><font color='#0000FF'>this site</font></a></u>.]]>
+					</mx:htmlText>
+				</mx:Text>-->
+			</mx:VBox>
+			<!--<mx:Box id="watershedEmailInput" visible="false" includeInLayout="false">
+				<mx:Text text="email: " />
+				<mx:HBox>
+					<mx:TextInput id="watershedDownloadEmail" width="150" enter="wetlandDownloadFunc()" />
+					<mx:Button id="watershedDownloadSubmit" label="Submit" click="wetlandDownloadFunc()" enabled="{watershedGraphicsLayer.graphicProvider.length &gt; 0}" />
+				</mx:HBox>
+			</mx:Box>-->
+		</mx:Box>
+	</mx:VBox>
+	
+</mx:Application>

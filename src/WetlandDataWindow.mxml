@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 07.11.13 - NE - Added swi status query to determine whether wetlands if visible in SWI mapper. -->
+<!-- 02.26.13 - NE - Fixed bug with historic quad query. -->
+<!-- 08.03.11 - NE - Added opacity control to layer query was performed on. -->
+<!-- 07.06.11 - NE - Added zoom to features button in window. -->
+<!-- 07.05.11 - NE - Created. -->
+<controls:WiMInfoWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+						xmlns:s="library://ns.adobe.com/flex/spark" 
+						xmlns:mx="library://ns.adobe.com/flex/mx" 
+						xmlns:esri="http://www.esri.com/2008/ags"
+						xmlns:controls="gov.usgs.wim.controls.*"
+						minWidth="250"
+						creationComplete="componentLoad()"
+						title="Wetland">
+	<fx:Style source="assets/styles/main.css"/>
+	<fx:Declarations>
+		
+		<esri:QueryTask id="swiStatusTask" useAMF="false" proxyURL="{resourceManager.getString('urls', 'proxyUrl')}"
+						url="{resourceManager.getString('urls', 'swiStatusUrl')}/0" showBusyCursor="true"/>
+		<esri:Query id="swiStatusQuery" returnGeometry="false">
+			<esri:outFields>
+				<fx:String>STATUS</fx:String>
+			</esri:outFields>
+		</esri:Query>
+		
+		<esri:QueryTask id="histTask" useAMF="false" proxyURL="{resourceManager.getString('urls', 'proxyUrl')}"
+						url="{resourceManager.getString('urls', 'dataSourceUrl')}/0" showBusyCursor="true"/>
+		<esri:Query id="histQuery" returnGeometry="false">
+			<esri:outFields>
+				<fx:String>PDF_HYPERLINK</fx:String>
+			</esri:outFields>	
+		</esri:Query>
+		
+		<esri:QueryTask id="quadTask" useAMF="false" proxyURL="{resourceManager.getString('urls', 'proxyUrl')}"
+						url="{resourceManager.getString('urls', 'dataSourceUrl')}/4" showBusyCursor="true"/>
+		<esri:Query id="quadQuery" returnGeometry="false">
+			<esri:outFields>
+				<fx:String>QUAD_NAME</fx:String>
+			</esri:outFields>
+		</esri:Query>
+		
+		<esri:QueryTask id="quadTask2" useAMF="false" proxyURL="{resourceManager.getString('urls', 'proxyUrl')}"
+						url="{resourceManager.getString('urls', 'dataSourceUrl')}/5" showBusyCursor="true"/>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.esri.ags.FeatureSet;
+			import com.esri.ags.geometry.Extent;
+			import com.esri.ags.geometry.MapPoint;
+			import com.esri.ags.utils.WebMercatorUtil;
+			import com.esri.ags.utils.GraphicUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			import mx.rpc.AsyncResponder;
+			import mx.utils.ObjectProxy;
+			
+			import skins.OpacityControlSkin;
+			
+			[Bindable]
+			private var hist_link:String = '';
+			[Bindable]
+			private var quad24k:String;
+			[Bindable]
+			private var quad63k:String;
+			[Bindable]
+			private var quad100k:String;
+			
+			private var finalLat:Number;
+			private var finalLng:Number;
+			
+			protected function componentLoad():void
+			{
+				maximizeButton.visible = false;
+				maximizeButton.includeInLayout = false;
+				minimizeButton.right = 24;
+				
+				swiStatusQuery.geometry = FlexGlobals.topLevelApplication.identifyPoint;
+				//swiStatusTask.execute(swiStatusQuery, new AsyncResponder(swiStatusResult, histFault, {type: "swiStatusQuery"}));
+				
+				histQuery.geometry = FlexGlobals.topLevelApplication.identifyPoint;
+				histTask.execute(histQuery, new AsyncResponder(histResult, histFault, {type: "histQuery"}));
+				
+				var tempIdenPT = FlexGlobals.topLevelApplication.identifyPoint;
+				
+				var inputPt:MapPoint = WebMercatorUtil.webMercatorToGeographic(FlexGlobals.topLevelApplication.identifyPoint) as MapPoint;
+				
+				finalLat = inputPt.y;
+				finalLng = inputPt.x;
+				
+				function histResult(featureSet:FeatureSet, token:Object = null):void
+				{
+					if (featureSet.features.length != 0) {
+						var i:int;
+						for (i = 0; i < featureSet.features.length; i++) {
+							var histMetaAttr:Object = new ObjectProxy(featureSet.features[i].attributes);
+							hist_link += "<a href='event:"+histMetaAttr.PDF_HYPERLINK+"'>click here</a><br/>";
+						}
+					}
+					
+					quadQuery.geometry = FlexGlobals.topLevelApplication.identifyPoint;
+					quadTask.execute(quadQuery, new AsyncResponder(quadResult, quadFault));
+					
+					function quadResult(featureSet:FeatureSet, token:Object = null):void
+					{
+						if (featureSet.features.length != 0) {
+							var quadAttr:Object = new ObjectProxy(featureSet.features[0].attributes);
+							if (quadAttr.QUAD_NAME != null) {
+								quad24k = quadAttr.QUAD_NAME;
+							} else if (quadAttr.NAME != null) {
+								quad63k = quadAttr.NAME;
+							} 
+						}
+						
+						quadTask2.execute(quadQuery, new AsyncResponder(quadResult2, quadFault));
+						function quadResult2(featureSet:FeatureSet, token:Object = null):void
+						{
+							if (featureSet.features.length != 0) {
+								var quadAttr:Object = new ObjectProxy(featureSet.features[0].attributes);
+								quad100k = quadAttr.QUAD_NAME;
+							}
+						}
+						
+					}
+					
+					function quadFault(info:Object, token:Object = null):void
+					{
+						//Alert.show(info.toString());
+					}
+					
+				}
+				
+				function histFault(info:Object, token:Object = null):void
+				{
+					//Alert.show(info.toString());
+				}
+			}
+			
+			private function swiStatusResult(featureSet:FeatureSet, token:Object = null) {
+				if (featureSet.features.length > 0 && featureSet.features[0].attributes.STATUS == "Digital") {
+					//swiLink.includeInLayout = true;
+					//swiLink.visible = true;
+				}
+			}
+			
+			private function histLinkHandler(event:TextEvent):void
+			{
+				navigateToURL(new URLRequest(event.text), '_blank')
+			}
+			
+			protected function zoomToFeatures():void {
+				var graphicProvider:ArrayCollection = FlexGlobals.topLevelApplication.wetQueryGraphicsLayer.graphicProvider as ArrayCollection;
+				var graphicsExtent:Extent = GraphicUtil.getGraphicsExtent(graphicProvider.toArray());
+				FlexGlobals.topLevelApplication.map.extent = graphicsExtent.expand(2.1);
+			}
+			
+		]]>
+	</fx:Script>
+	<mx:Box backgroundColor="0xBBBBBB" height="100%" width="100%" color="white">
+		<s:Group>
+			<s:layout>
+				<s:VerticalLayout/>
+			</s:layout>
+			<mx:VBox styleName="poiContain" width="100%" paddingTop="10" paddingBottom="5" paddingLeft="5" paddingRight="5" verticalGap="0">
+				<mx:HBox width="100%" borderColor="white" backgroundColor="black" borderStyle="solid" paddingBottom="5" paddingLeft="5" paddingTop="5" paddingRight="10">
+					<s:Button id="zoomToFeaturesButton" label="Zoom To Feature" click="zoomToFeatures()" />
+					<mx:HBox paddingTop="5">
+						<s:Label text="Opacity: " color="white" paddingLeft="10" />
+						<controls:OpacityControl opacityBoxStyleName="opacityBoxTrans" opacityElement="{FlexGlobals.topLevelApplication.wetlands}" />
+					</mx:HBox>
+				</mx:HBox>
+				<s:VGroup width="100%" horizontalAlign="center" paddingTop="3">
+					<mx:Text id="swiLink" text="view in NWI V2 Mapper" textDecoration="underline" color="blue" useHandCursor="true" buttonMode="true" mouseChildren="false" 
+							 includeInLayout="false"
+							 visible="false"
+							 click="navigateToURL(new URLRequest('http://www.fws.gov/wetlands/Data/_Mapper1.html?mapper=swi&amp;latlng='+finalLat+','+finalLng+',c&amp;scale='+FlexGlobals.topLevelApplication.map.scale))" />
+				</s:VGroup>
+				<s:HGroup width="100%" paddingTop="10">
+					<mx:Text text="Classification Code:" fontWeight="bold" />
+					<mx:Text text="{data.ATTRIBUTE} (" paddingRight="-2"/>
+					<mx:Text text="decode" paddingLeft="-2" paddingRight="-2" textDecoration="underline" color="blue" useHandCursor="true" buttonMode="true" mouseChildren="false" click="navigateToURL(new URLRequest(resourceManager.getString('urls', 'wetlandsDecoderUrl')+data.ATTRIBUTE))" />
+					<mx:Text text=")" paddingLeft="-2" />
+				</s:HGroup>
+				<s:HGroup><mx:Text text="Wetland Type:" fontWeight="bold" /><mx:Text text="{data.WETLAND_TYPE}" /></s:HGroup>
+				<s:HGroup><mx:Text text="Acres:" fontWeight="bold" /><mx:Text text="{parseFloat(data.ACRES).toFixed(2)}" /></s:HGroup>
+				<s:HGroup><mx:Text text="Status:" fontWeight="bold" /><mx:Text text="{data.STATUS}" /></s:HGroup>
+				<s:HGroup><mx:Text text="Image Date(s):" fontWeight="bold" /><mx:Text styleName="{(data.SOURCE_TYPE == 'Scalable') ? 'line' : 'noline'}" useHandCursor="{(data.SOURCE_TYPE == 'Scalable') ? true : false}" buttonMode="{(data.SOURCE_TYPE == 'Scalable') ? true : false}" mouseChildren="{(data.SOURCE_TYPE == 'Scalable') ? false : true}" text="{(data.SOURCE_TYPE == 'Scalable') ? 'click here' : data.IMAGE_DATE}" click="(data.SOURCE_TYPE == 'Scalable') ? navigateToURL(new URLRequest(data.SUPPMAPINFO)) : ''" /></s:HGroup>
+				<s:HGroup><mx:Text text="Source Type:" fontWeight="bold" /><mx:Text text="{data.SOURCE_TYPE}" /></s:HGroup>
+				<s:HGroup><mx:Text text="Image Scale:" fontWeight="bold" /><mx:Text styleName="{(data.SOURCE_TYPE == 'Scalable') ? 'line' : 'noline'}" useHandCursor="{(data.SOURCE_TYPE == 'Scalable') ? true : false}" buttonMode="{(data.SOURCE_TYPE == 'Scalable') ? true : false}" mouseChildren="{(data.SOURCE_TYPE == 'Scalable') ? false : true}" text="{(data.SOURCE_TYPE == 'Scalable') ? 'click here' : data.IMAGE_SCALE}" click="(data.SOURCE_TYPE == 'Scalable') ? navigateToURL(new URLRequest(data.SUPPMAPINFO)) : ''" /></s:HGroup>
+				<s:HGroup visible="{(quad24k != null) ? true : false}" includeInLayout="{(quad24k != null) ? true : false}"><mx:Text text="24k Quad Name:" fontWeight="bold" /><mx:Text text="{(quad24k != null) ? quad24k : 'n/a'}" /></s:HGroup>
+				<s:HGroup visible="{(quad100k != null) ? true : false}" includeInLayout="{(quad100k != null) ? true : false}"><mx:Text text="100k Quad Name:" fontWeight="bold" /><mx:Text text="{(quad100k != null) ? quad100k : 'n/a'}" /></s:HGroup>
+				<s:HGroup visible="{(quad63k != null) ? true : false}" includeInLayout="{(quad63k != null) ? true : false}"><mx:Text text="63k Quad Name:" fontWeight="bold" /><mx:Text text="{(quad63k != null) ? quad63k : 'n/a'}" /></s:HGroup>
+				<s:HGroup><mx:Text text="Project Metadata:" fontWeight="bold" /><mx:Text id="metaLink" visible="true" styleName="{(data.SUPPMAPINFO != ('None' || null)) ? 'line' : 'noline'}" text="{(data.SUPPMAPINFO != ('None' || null)) ? 'click here' : 'NONE'}" useHandCursor="true" buttonMode="true" mouseChildren="false" click="(data.SUPPMAPINFO != ('None' || null)) ? navigateToURL(new URLRequest(data.SUPPMAPINFO)) : ''"/></s:HGroup>
+				<s:HGroup><mx:Text text="Historic Map Info:" fontWeight="bold" />
+					<s:VGroup id="histLinks">
+						<mx:Text id="histLink" selectable="true" styleName="{(hist_link != null) ? 'line' : 'noline'}" link="histLinkHandler(event)" htmlText="{(hist_link != null) ? hist_link : 'NONE'}" />
+						<!--<mx:Text id="histLink" visible="true" styleName="{(data.PDF_HYPERLINK != null) ? 'line' : 'noline'}" htmlText="{(data.PDF_HYPERLINK != null) ? data.PDF_HYPERLINK : 'NONE'}" useHandCursor="true" buttonMode="true" mouseChildren="false" click="(data.PDF_HYPERLINK != null) ? navigateToURL(new URLRequest(data.PDF_HYPERLINK)) : ''"/>
+					--></s:VGroup>
+				</s:HGroup>
+				<mx:HBox horizontalGap="0"><mx:Text text="FGDC Metadata:" fontWeight="bold" />
+					<mx:Text id="fgdcLink" visible="true" styleName="line" text="click here" useHandCursor="true" buttonMode="true" mouseChildren="false" 
+							 click="navigateToURL(new URLRequest('http://www.fws.gov/wetlands/Data/metadata.html'))"/>
+				</mx:HBox>
+			</mx:VBox>
+		</s:Group>
+	</mx:Box>
+		
+	
+</controls:WiMInfoWindow>

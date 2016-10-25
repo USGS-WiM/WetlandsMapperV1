@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 06.18.11 - JB - Added new transparency icon, switched to ZoomOver Icon -->
+<!-- 02.11.11 - JB - REmoved padding, more flexible for API users -->
+<!-- 02.01.11 - JB - Created -->
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:controls="gov.usgs.wim.controls.*">
+	<!-- host component -->
+	<fx:Metadata>
+		[HostComponent("gov.usgs.wim.controls.OpacityControl")]
+	</fx:Metadata>
+	
+	<fx:Style source="../assets/styles/controlStyles.css" />
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			
+			/* Icon Copyright WiM 2011 */			
+			[Bindable]
+			[Embed(source='../assets/images/transparency_20x20.png')] 
+			private var opacityIcon:Class;
+						
+		]]>
+	</fx:Script>
+	
+	<!-- states -->
+	<s:states>
+		<s:State name="disabled" />
+		<s:State name="normal" />
+	</s:states>
+	
+	<!-- SkinParts
+	name=contentGroup, type=spark.components.Group, required=false
+	-->
+	<s:HGroup height="18">		
+		<controls:ZoomIcon enabled="{hostComponent.enabled}" id="opacityControl" click="hostComponent.sliderFadeIn(event)" height="12" width="12"  
+				  source="{opacityIcon}" buttonMode="true" toolTip="Opacity" closeUpRatio="1.5" />
+	</s:HGroup>
+</s:Skin>
