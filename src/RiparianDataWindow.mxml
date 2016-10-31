@@ -125,12 +125,12 @@
 						<controls:OpacityControl opacityBoxStyleName="opacityBoxTrans" opacityElement="{FlexGlobals.topLevelApplication.riparian}" />
 					</mx:HBox>
 				</mx:HBox>
-				<s:VGroup width="100%" horizontalAlign="center" paddingTop="3">
+				<!--<s:VGroup width="100%" horizontalAlign="center" paddingTop="3">
 					<mx:Text id="swiLink" text="view in NWI V2 Mapper" textDecoration="underline" color="blue" useHandCursor="true" buttonMode="true" mouseChildren="false" 
 							 includeInLayout="true"
 							 visible="true"
 							 click="navigateToURL(new URLRequest('http://www.fws.gov/wetlands/Data/_Mapper1.html?mapper=swi&amp;latlng='+finalLat+','+finalLng+',c&amp;scale='+FlexGlobals.topLevelApplication.map.scale))" />
-				</s:VGroup>
+				</s:VGroup>-->
 				<s:HGroup width="100%" paddingTop="10">
 					<mx:Text text="Classification Code:" fontWeight="bold" />
 					<mx:Text text="{data.ATTRIBUTE} (" paddingRight="-2"/>

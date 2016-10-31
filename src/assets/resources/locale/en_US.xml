@@ -17,31 +17,31 @@
   <!--  URLs -->
   <resourceBundle name="urls">
   
-  	 <resource name="wetlandsUrl" value="https://fwsmapservices.wim.usgs.gov/ArcGIS/rest/services/NWIV1/Wetlands/MapServer"/>
-	 <resource name="wetlandsRasterUrl" value="https://fwsmapservices.wim.usgs.gov/arcgis/rest/services/NWIV1/WetlandsRaster/ImageServer"/>
-	 <resource name="wetlandsStatusUrl" value="https://fwsmapservices.wim.usgs.gov/ArcGIS/rest/services/NWIV1/Wetlands_Status/MapServer"/>
-	 <resource name="riparianUrl" value="https://fwsmapservices.wim.usgs.gov/ArcGIS/rest/services/Riparian/MapServer"/>
-	 <resource name="dataSourceUrl" value="https://fwsmapservices.wim.usgs.gov/ArcGIS/rest/services/NWIV1/Data_Source/MapServer"/>
-	 <resource name="areasOfInterestUrl" value="https://fwsmapservices.wim.usgs.gov/ArcGIS/rest/services/Areas_of_Interest/MapServer/0"/>
-	 <resource name="historicUrl" value="https://fwsmapservices.wim.usgs.gov/ArcGIS/rest/services/Historic_Wetlands/MapServer"/>
-	 <resource name="huc8Url" value="https://fwsmapservices.wim.usgs.gov/ArcGIS/rest/services/HUCs/MapServer"/>
+  	 <resource name="wetlandsUrl" value="https://fwsmapper.wim.usgs.gov/ArcGIS/rest/services/NWIV1/Wetlands/MapServer"/>
+	 <resource name="wetlandsRasterUrl" value="https://fwsmapper.wim.usgs.gov/arcgis/rest/services/NWIV1/WetlandsRaster/ImageServer"/>
+	 <resource name="wetlandsStatusUrl" value="https://fwsmapper.wim.usgs.gov/ArcGIS/rest/services/NWIV1/Wetlands_Status/MapServer"/>
+	 <resource name="riparianUrl" value="https://fwsmapper.wim.usgs.gov/ArcGIS/rest/services/Riparian/MapServer"/>
+	 <resource name="dataSourceUrl" value="https://fwsmapper.wim.usgs.gov/ArcGIS/rest/services/NWIV1/Data_Source/MapServer"/>
+	 <resource name="areasOfInterestUrl" value="https://fwsmapper.wim.usgs.gov/ArcGIS/rest/services/Areas_of_Interest/MapServer/0"/>
+	 <resource name="historicUrl" value="https://fwsmapper.wim.usgs.gov/ArcGIS/rest/services/Historic_Wetlands/MapServer"/>
+	 <resource name="huc8Url" value="https://fwsmapper.wim.usgs.gov/ArcGIS/rest/services/HUCs/MapServer"/>
 	 
 	 <resource name="fwsRefugesUrl" value="http://gis.fws.gov/ArcGIS/rest/services/FWS_Refuge_Boundaries/MapServer"/>
 	 
-	 <resource name="swiStatusUrl" value="https://fwsmapservices.wim.usgs.gov/arcgis/rest/services/Wetlands_Status/MapServer"/>
+	 <resource name="swiStatusUrl" value="https://fwsmapper.wim.usgs.gov/arcgis/rest/services/Wetlands_Status/MapServer"/>
 	 
-	 <resource name="wetlandsDecoderUrl" value="https://fwsmapservices.wim.usgs.gov/decoders/wetlands.aspx?CodeURL=" />
-	 <resource name="riparianDecoderUrl" value="https://fwsmapservices.wim.usgs.gov/decoders/riparian.aspx?CodeURL=" />
+	 <resource name="wetlandsDecoderUrl" value="https://fwsmapper.wim.usgs.gov/decoders/wetlands.aspx?CodeURL=" />
+	 <resource name="riparianDecoderUrl" value="https://fwsmapper.wim.usgs.gov/decoders/riparian.aspx?CodeURL=" />
 	 
-	 <resource name="pdfUrl" value="https://fwsmapservices.wim.usgs.gov/wetland/Default.aspx"/>
+	 <resource name="pdfUrl" value="https://fwsmapper.wim.usgs.gov/wetland/Default.aspx"/>
 	 
-	 <resource name="geomServiceUrl" value="https://fwsmapservices.wim.usgs.gov/arcgis/rest/services/Utilities/Geometry/GeometryServer"/>
+	 <resource name="geomServiceUrl" value="https://fwsmapper.wim.usgs.gov/arcgis/rest/services/Utilities/Geometry/GeometryServer"/>
 	 
 	 <resource name="geocoderUrl" value="http://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer"/>
 	 
-	 <resource name="proxyUrl" value="https://fwsmapservices.wim.usgs.gov/serviceProxy/proxy.ashx" />
-	 <resource name="downloadLogUrl" value="https://fwsmapservices.wim.usgs.gov/downloadLoggingService/downloadLog.asmx/Log?huc=" />
-	 <resource name="printLogUrl" value="https://fwsmapservices.wim.usgs.gov/pdfLoggingService/pdfLog.asmx/Log?printInfo=" />
+	 <resource name="proxyUrl" value="https://fwsmapper.wim.usgs.gov/serviceProxy/proxy.ashx" />
+	 <resource name="downloadLogUrl" value="https://fwsmapper.wim.usgs.gov/downloadLoggingService/downloadLog.asmx/Log?huc=" />
+	 <resource name="printLogUrl" value="https://fwsmapper.wim.usgs.gov/pdfLoggingService/pdfLog.asmx/Log?printInfo=" />
 	 
 	<resource name="wetlandsLegendInfoUrl" value="http://www.fws.gov/wetlands/Data/Mapper-Wetlands-Legend.html"/>
 	 
