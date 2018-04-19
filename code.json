@@ -1,0 +1,47 @@
+[
+    {
+      "name": "WetlandsMapperV1",
+      "organization": "U.S. Geological Survey",
+      "description": "Flex version of Wetlands Mapper",
+      "version": "v0.0.0",
+      "status": ["Archival"],
+  
+      "permissions": {
+        "usageType": "openSource",
+        "licenses": [
+          {
+            "name": "Public Domain",
+            "URL": "https://github.com/USGS-WiM/WetlandsMapperV1/blob/master/LICENSE.md"
+          }
+        ]
+      },
+  
+      "homepageURL": "https://wim.usgs.gov",
+      "downloadURL": "https://github.com/USGS-WiM/WetlandsMapperV1/archive/master.zip",
+      "disclaimerURL": "https://github.com/USGS-WiM/WetlandsMapperV1/blob/master/DISCLAIMER.md",
+      "repositoryUrl": "https://github.com/USGS-WiM/WetlandsMapperV1",
+      "vcs": "git",
+  
+      "laborHours": null,
+  
+      "tags": [
+        "sfb",
+        "mapper"
+      ],
+  
+      "languages": [
+        "javascript",
+        "actionscript"
+      ],
+  
+      "contact": {
+        "name": "Nick Estes",
+        "email": "njestes@usgs.gov"
+      },
+  
+      "date": {
+        "metadataLastUpdated": "2018-04-19"
+      }
+    }
+  ]
+  
